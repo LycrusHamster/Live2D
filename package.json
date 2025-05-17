@@ -1,0 +1,48 @@
+{
+  "name": "RAGTest",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "rag": "ts-node src/example/rag.ts",
+    "rag1": "ts-node src/example/rag1.ts",
+    "reranker": "ts-node src/example/reranker.ts",
+    "asr": "ts-node src/example/asr.ts",
+    "tts": "ts-node src/example/tts.ts",
+    "llm": "ts-node src/example/llm.ts",
+    "llm1": "ts-node src/example/llm1.ts",
+
+
+    "start": "nest start",
+    "start:dev": "nest start --watch",
+    "start:debug": "nest start --debug --watch",
+    "start:debug:nowatch": "nest start --debug"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^3.5.1",
+    "chromadb": "^2.4.3",
+    "live2d-motionsync": "^0.0.4",
+    "mic": "^2.1.2",
+    "ollama": "^0.5.15",
+    "pixi-live2d-display": "^0.4.0",
+    "pixi.js": "6.5.10",
+    "sherpa-onnx": "^1.12.0",
+    "wav-reader-ts": "^1.0.6",
+    "@nestjs/common": "^10.0.0",
+    "@nestjs/config": "^3.3.0",
+    "@nestjs/core": "^10.0.0",
+    "@nestjs/swagger": "^8.0.1",
+    "@nestjs/platform-express": "^10.0.0",
+    "helmet": "^8.0.0",
+    "reflect-metadata": "^0.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.17",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.3",
+    "@types/express": "^4.17.17",
+    "@nestjs/cli": "^10.0.0"
+  },
+  "private": true
+}
