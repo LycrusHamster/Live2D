@@ -1,11 +1,12 @@
 import {Injectable} from '@nestjs/common';
 import {ChromaClient, Collection} from "chromadb";
-import {FeatureExtractionPipeline, Pipeline, pipeline} from "@huggingface/transformers";
+import {Chat, FeatureExtractionPipeline, Pipeline, pipeline} from "@huggingface/transformers";
 import {
     AutomaticSpeechRecognitionPipeline,
     TextClassificationPipeline,
     TextGenerationPipeline
 } from "@huggingface/transformers/types/pipelines";
+
 const sherpa_onnx = require('sherpa-onnx');
 
 @Injectable()
@@ -13,11 +14,11 @@ export class HuggingFaceService {
 
     chroma: ChromaClient;
     collection: Collection;
-    // embedding: FeatureExtractionPipeline;
+    embedding: FeatureExtractionPipeline;
     asr: AutomaticSpeechRecognitionPipeline;
     chat: TextGenerationPipeline;
     // reranker: TextClassificationPipeline;
-    tts:any;
+    tts: any;
 
     constructor() {
         this.chroma = new ChromaClient({path: "http://localhost:8200"});
@@ -26,14 +27,13 @@ export class HuggingFaceService {
     async onModuleInit() {
         this.collection = await this.chroma.getOrCreateCollection({name: "my-collection"});
 
-/*
+        console.log(`--------loading RAG Xenova/bge-base-zh`)
         //rag
+        // @ts-ignore
         this.embedding = await pipeline('feature-extraction', 'Xenova/bge-base-zh');
-*/
 
         console.log(`--------loading ASR Xenova/whisper-base`)
         //asr
-        // @ts-ignore
         this.asr = await pipeline('automatic-speech-recognition', 'Xenova/whisper-base');
 
 
@@ -44,33 +44,39 @@ export class HuggingFaceService {
         //reranker
         /*this.reranker = await pipeline('text-classification', 'Xenova/bge-reranker-base');*/
 
-        /*{
+        {
             //init rag
 
-            let documents = [
-                "小仓鼠最喜欢的食物是瓜子",
-                "大龙猫最喜欢的食物是提摩西草",
-            ]
+            const countOfRag = await this.collection.count()
+            console.log(`countOfRag: ${countOfRag}`)
+            if (countOfRag == 0) {
 
-            for (let index in documents) {
-                let sentence = documents[index];
+                //hard code for now
+                let documents = [
+                    "小仓鼠最喜欢的食物是瓜子",
+                    "大龙猫最喜欢的食物是提摩西草",
+                ]
 
-                //mean?
-                const embeddings = await this.embedding(sentence, {pooling: 'mean', normalize: true});
-                // @ts-ignore
-                const embeddingData: Float32Array = embeddings[0].data
-                const embeddingDataNumberArray = [...embeddingData]
-                console.log(`embeddingDataNumberArray length ${embeddingDataNumberArray.length}`)
+                for (let index in documents) {
+                    let sentence = documents[index];
 
-                await this.collection.add({
-                    embeddings: embeddingDataNumberArray,
-                    ids: `lycrus-${index}`,
-                    documents: sentence
-                })
+                    //mean?
+                    const embeddings = await this.embedding(sentence, {pooling: 'mean', normalize: true});
+                    // @ts-ignore
+                    const embeddingData: Float32Array = embeddings[0].data
+                    const embeddingDataNumberArray = [...embeddingData]
+                    console.log(`embeddingDataNumberArray length ${embeddingDataNumberArray.length}`)
 
-                console.log(`collection added for ${index}`)
+                    await this.collection.add({
+                        embeddings: embeddingDataNumberArray,
+                        ids: `lycrus-${index}`,
+                        documents: sentence
+                    })
+
+                    console.log(`collection added for ${index}`)
+                }
             }
-        }*/
+        }
 
 
         console.log(`--------loading TTS sherpa_onnx`)
@@ -84,10 +90,10 @@ export class HuggingFaceService {
         console.log('TTS model releases');
     }
 
-    async handle(data: Float32Array):Promise<{
+    async handle(data: Float32Array): Promise<{
         asr: string,
         answer: string,
-        audioData:Float32Array
+        audioData: Float32Array
     }> {
 
         //asr
@@ -102,7 +108,7 @@ export class HuggingFaceService {
         // @ts-ignore
         const text: string = asrResult.text;
 
-        /*//rag
+        //rag
         const textEmbedding = await this.embedding(text, {pooling: 'mean', normalize: true});
         // @ts-ignore
         const textEmbeddingData: Float32Array = textEmbedding[0].data
@@ -111,14 +117,15 @@ export class HuggingFaceService {
 
         let ragResult = await this.collection.query({
             queryEmbeddings: textEmbeddingDataNumberArray,
-            nResults: 1
+            nResults: 10
         })
 
-
+        let ragDocsRaw = ragResult.documents[0];
+        let ragDocs = ragDocsRaw.filter((item): item is string => item !== null)
 
 
         //rerank
-        let results = [];
+        /*let results = [];
 
         for (const doc of docs) {
             const combined = `${query} </s> ${doc}`; // BGE Reranker 的输入格式
@@ -139,7 +146,9 @@ export class HuggingFaceService {
         */
 
         //chat
-        const output = await this.chat(text, {
+        let query = this.buildChatMLPromptStruct([], [text], [], ragDocs)
+        console.log(`query: ${JSON.stringify(query, null, 2)}`)
+        const output = await this.chat(query, {
             // max_new_tokens: 512,
             temperature: 0.7,
             // stop: ['<|im_end|>'],
@@ -159,11 +168,39 @@ export class HuggingFaceService {
         return {
             asr: text,
             answer: answer,
-            audioData:audioFloat32Array
+            audioData: audioFloat32Array
         };
     }
 
-    buildChatMLPrompt({system = [], user = [], assistant = [], rag = []}) {
+    buildChatMLPromptStruct(system: Array<string> = [], user: Array<string> = [], assistant: Array<string> = [], rag: Array<string> = []) {
+        const messages: Chat = [];
+
+        if (rag.length > 0) {
+            messages.push({
+                role: 'system',
+                content: `以下是你可以参考的资料：\n${rag.map((x, i) => `${i + 1}. ${x}`).join('\n')}`
+            });
+        }
+
+        // 插入其他 system 设定
+        for (const sys of system) {
+            messages.push({
+                role: 'system',
+                content: sys
+            });
+        }
+
+        // 按顺序插入 user/assistant 对话（允许对话轮数不对等）
+        const maxTurns = Math.max(user.length, assistant.length);
+        for (let i = 0; i < maxTurns; i++) {
+            if (user[i]) messages.push({role: 'user', content: user[i]});
+            if (assistant[i]) messages.push({role: 'assistant', content: assistant[i]});
+        }
+
+        return messages;
+    }
+
+    buildChatMLPrompt(system: Array<string> = [], user: Array<string> = [], assistant: Array<string> = [], rag: Array<string> = []) {
         let prompt = '';
 
         if (rag.length) {

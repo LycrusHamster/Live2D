@@ -1,0 +1,58 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/huggingFace/ask": {
+      "post": {
+        "operationId": "HuggingFaceController_ask",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AskDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "HuggingFace"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Capy API",
+    "description": "Capy API",
+    "version": "1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [
+    {
+      "url": "/api/v1"
+    }
+  ],
+  "components": {
+    "schemas": {
+      "AskDto": {
+        "type": "object",
+        "properties": {
+          "audio": {
+            "type": "string",
+            "description": "语音的Float32Array转Buffer转Base64",
+            "example": false
+          }
+        },
+        "required": [
+          "audio"
+        ]
+      }
+    }
+  }
+}

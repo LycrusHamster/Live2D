@@ -3,6 +3,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import * as express from 'express';
 import helmet from 'helmet';
+import * as bodyParser from 'body-parser';
 
 import { AppModule } from './app.module';
 import initSwagger from './swagger';
@@ -21,6 +22,10 @@ async function bootstrap() {
     }),
   );
   app.setGlobalPrefix('/api/v1');
+
+  app.use(bodyParser.json({ limit: '50mb' }));
+  app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
+
 
   initSwagger(app);
 

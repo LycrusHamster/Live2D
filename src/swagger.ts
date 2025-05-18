@@ -1,4 +1,5 @@
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as fs from "node:fs";
 
 export default (app: any, path = `/api/v1/doc`): void => {
   const document = SwaggerModule.createDocument(
@@ -12,7 +13,7 @@ export default (app: any, path = `/api/v1/doc`): void => {
     { ignoreGlobalPrefix: true, deepScanRoutes: true },
   );
 
-  //fs.writeFileSync('./swagger-spec.json', JSON.stringify(document, null, 2));
+  fs.writeFileSync('./swagger-spec.json', JSON.stringify(document, null, 2));
 
   SwaggerModule.setup(path, app, document);
 };

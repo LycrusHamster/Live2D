@@ -1,5 +1,5 @@
 import {ChromaClient} from "chromadb";
-import { pipeline } from '@huggingface/transformers';
+import {pipeline} from '@huggingface/transformers';
 
 export async function main() {
 
@@ -15,42 +15,49 @@ export async function main() {
     const extractor = await pipeline('feature-extraction', 'Xenova/bge-base-zh');
 
 
-
     let documents = [
         "The creator of Diablo II is Lycrus",
         "World of Warcraft is published on 2010",
+        "还有什么事",
+        "2024年元旦是1月1日",
+        "Diablo is a ARPG game"
     ]
 
-    {{{
+    {
+        {
+            {
 
 
+                for (let index in documents) {
+                    let sentence = documents[index];
 
-        for (let index in documents) {
-            let sentence = documents[index];
+                    //mean?
+                    const embeddings = await extractor(sentence, {pooling: 'mean', normalize: true});
+                    // @ts-ignore
+                    const embeddingData: Float32Array = embeddings[0].data
+                    const embeddingDataNumberArray = [...embeddingData]
+                    console.log(`embeddingDataNumberArray length ${embeddingDataNumberArray.length}`)
 
-            //mean?
-            const embeddings = await extractor(sentence, { pooling: 'mean', normalize: true });
-            // @ts-ignore
-            const embeddingData : Float32Array = embeddings[0].data
-            const embeddingDataNumberArray = [...embeddingData]
-            console.log(`embeddingDataNumberArray length ${embeddingDataNumberArray.length}`)
+                    await collection.add({
+                        embeddings: embeddingDataNumberArray,
+                        ids: `lycrus-${index}`,
+                        documents: sentence
+                    })
 
-            await collection.add({
-                embeddings: embeddingDataNumberArray,
-                ids: `lycrus-${index}`,
-                documents: sentence
-            })
-
-            console.log(`collection added for ${index}`)
+                    console.log(`collection added for ${index}`)
+                }
+            }
         }
-    }}}
+    }
 
+    const countOfRag = await collection.count()
+    console.log(`countOfRag: ${countOfRag}`)
 
     let query = 'when does Diablo publish'
 
-    const embeddings = await extractor(query, { pooling: 'mean', normalize: true });
+    const embeddings = await extractor(query, {pooling: 'mean', normalize: true});
     // @ts-ignore
-    const embeddingData : Float32Array = embeddings[0].data
+    const embeddingData: Float32Array = embeddings[0].data
     const embeddingDataNumberArray = [...embeddingData]
     console.log(`!!!embeddingDataNumberArray length ${embeddingDataNumberArray.length}`)
 
@@ -60,7 +67,10 @@ export async function main() {
         nResults: 10
     })
 
-    let doc = ragResult.documents[0][0] ?? `rag为空`
+    let ragDocs = ragResult.documents[0];
+    let ragDistances = ragResult.distances ? ragResult.distances[0] : [];
+
+    let doc = ragDocs ?? `rag为空`
 
     {
         //rerank demo
@@ -71,13 +81,13 @@ export async function main() {
 
         for (const doc of docs) {
             const combined = `${query} </s> ${doc}`; // BGE Reranker 的输入格式
-            const output = await reranker(combined, { top_k: 1 }); // 返回单个分数
+            const output = await reranker(combined, {top_k: 1}); // 返回单个分数
 
             //@ts-ignore
             console.log(`output ${output[0].score}`)
 
             //@ts-ignore
-            results.push({ doc, score: parseFloat(output[0].score) });
+            results.push({doc, score: parseFloat(output[0].score)});
         }
 
         // 排序并打印
