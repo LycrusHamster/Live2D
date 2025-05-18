@@ -15,6 +15,8 @@ export class HuggingFaceController {
         @Body() req: AskDto
     ) {
 
+        console.log(`incoming ask`)
+
         const buffer = Buffer.from(req.audio,`base64`)
 
         // 转换为 Float32Array（注意单位：4 字节）
