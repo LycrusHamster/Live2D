@@ -12,6 +12,7 @@
     "tts": "ts-node src/example/tts.ts",
     "llm": "ts-node src/example/llm.ts",
     "llm1": "ts-node src/example/llm1.ts",
+    "llm_ollama": "ts-node src/example/llm_ollama.ts",
 
 
     "start": "nest start",
@@ -35,7 +36,8 @@
     "@nestjs/swagger": "^8.0.1",
     "@nestjs/platform-express": "^10.0.0",
     "helmet": "^8.0.0",
-    "reflect-metadata": "^0.2.0"
+    "reflect-metadata": "^0.2.0",
+    "@nestjs/schedule": "^4.1.1"
   },
   "devDependencies": {
     "@types/node": "^22.15.17",

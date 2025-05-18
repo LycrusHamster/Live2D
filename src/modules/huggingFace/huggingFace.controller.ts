@@ -28,7 +28,7 @@ export class HuggingFaceController {
 
         // const data = [...floatArray];
 
-        console.log('floatArray dimension: ', floatArray.length);
+        console.log('floatArray length: ', floatArray.length);
 
         const ret = await this.huggingFaceService.handle(floatArray)
 

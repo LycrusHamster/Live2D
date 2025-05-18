@@ -4,3 +4,7 @@ https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-icefall-
 vits-icefall-zh-aishell3
     data.fst
     lexicon.txt
+
+
+安装ollama
+然后 ollama pull deepseek-r1:1.5b
