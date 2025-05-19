@@ -8,6 +8,7 @@ import {
 } from "@huggingface/transformers/types/pipelines";
 import ollama, {Message} from 'ollama'
 import {Cron, CronExpression} from "@nestjs/schedule";
+import * as wavEncoder from 'wav-encoder';
 
 const sherpa_onnx = require('sherpa-onnx');
 
@@ -133,7 +134,7 @@ export class HuggingFaceService {
     async handle(data: Float32Array): Promise<{
         asr: string,
         answer: string,
-        audioData: Float32Array
+        wavFileDataBase64: string
     }> {
 
         //asr
@@ -223,12 +224,20 @@ export class HuggingFaceService {
 
         console.log(`tts got audio`)
 
-        const audioFloat32Array = audio.samples;
+        // const audioFloat32Array = audio.samples;
+        // const audioRate = audio.sampleRate;
+
+        const wavData = await wavEncoder.encode({
+            sampleRate: audio.sampleRate,
+            channelData: [audio.samples] // 单通道
+        });
+
+        const wavFileDataBase64 = Buffer.from(wavData).toString(`base64`)
 
         return {
             asr: text,
             answer: answer,
-            audioData: audioFloat32Array
+            wavFileDataBase64: wavFileDataBase64
         };
     }
 

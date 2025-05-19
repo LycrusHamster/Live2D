@@ -32,12 +32,10 @@ export class HuggingFaceController {
 
         const ret = await this.huggingFaceService.handle(floatArray)
 
-        let audioDataBase64 = Buffer.from(ret.audioData).toString('base64')
-
         return {
             asr: ret.asr,
             answer: ret.answer,
-            audio: audioDataBase64
+            audio: ret.wavFileDataBase64
         }
     }
 
