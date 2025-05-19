@@ -149,7 +149,7 @@ export class HuggingFaceService {
         // @ts-ignore
         let text: string = asrResult.text;
 
-        text = `小仓鼠最喜欢的食物是什么`
+        // text = `小仓鼠最喜欢的食物是什么`
 
         //rag
         const textEmbedding = await this.embedding(text, {pooling: 'mean', normalize: true});
